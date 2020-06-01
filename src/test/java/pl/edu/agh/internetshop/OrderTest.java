@@ -1,8 +1,13 @@
 package pl.edu.agh.internetshop;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.internal.matchers.Null;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
@@ -14,20 +19,60 @@ public class OrderTest {
 
 	private Order getOrderWithMockedProduct() {
 		Product product = mock(Product.class);
-		return new Order(product);
+		return new Order(Collections.singletonList(product));
 	}
 
 	@Test
-	public void testGetProductThroughOrder() {
+	public void testEmptyListOfProducts() {
+		// when
+		// then
+		assertThrows(IllegalArgumentException.class, () -> new Order(Collections.emptyList()));
+	}
+
+	@Test
+	public void testNullListOfProducts() {
+		//when
+		//then
+		assertThrows(NullPointerException.class, () -> new Order(null));
+	}
+
+	@Test
+	public void productListWithNullElement() {
+		//given
+		Product product = mock(Product.class);
+		List<Product> products = Arrays.asList(product,null);
+		//when
+		//then
+		assertThrows(IllegalArgumentException.class, () -> new Order(products));
+	}
+
+	@Test
+	public void getProductThroughOrder() {
 		// given
 		Product expectedProduct = mock(Product.class);
-		Order order = new Order(expectedProduct);
+		Order order = new Order(Collections.singletonList(expectedProduct));
 
 		// when
-		Product actualProduct = order.getProduct();
+		List<Product> actualProduct = order.getProducts();
 
 		// then
-		assertSame(expectedProduct, actualProduct);
+		assertSame(expectedProduct, actualProduct.get(0));
+	}
+
+	@Test
+	public void getManyProductsThroughOrder() {
+		//given
+		Product expectedProduct1 = mock(Product.class);
+		Product expectedProduct2 = mock(Product.class);
+		Order order = new Order(Arrays.asList(expectedProduct1,expectedProduct2));
+
+		//when
+		List<Product> actualProducts = order.getProducts();
+
+		//then
+		assertSame(expectedProduct1,actualProducts.get(0));
+		assertSame(expectedProduct2,actualProducts.get(1));
+		assertEquals(actualProducts.size(),2);
 	}
 
 	@Test
@@ -60,7 +105,7 @@ public class OrderTest {
 		BigDecimal expectedProductPrice = BigDecimal.valueOf(1000);
 		Product product = mock(Product.class);
 		given(product.getPrice()).willReturn(expectedProductPrice);
-		Order order = new Order(product);
+		Order order = new Order(Collections.singletonList(product));
 
 		// when
 		BigDecimal actualProductPrice = order.getPrice();
@@ -73,7 +118,35 @@ public class OrderTest {
 		BigDecimal productPrice = BigDecimal.valueOf(productPriceValue);
 		Product product = mock(Product.class);
 		given(product.getPrice()).willReturn(productPrice);
-		return new Order(product);
+		return new Order(Collections.singletonList(product));
+	}
+
+	private Order getOrderWithManyCertainProductPrices(List<Double> prices) {
+		List<Product> products = new ArrayList<>();
+		for (Double price: prices) {
+			BigDecimal decimalPrice = BigDecimal.valueOf(price);
+			Product product  = mock(Product.class);
+			given(product.getPrice()).willReturn(decimalPrice);
+			products.add(product);
+		}
+		return new Order(products);
+	}
+
+	@Test
+	public void getPriceOfOrderWithManyProducts() {
+		//given
+		List<Double> prices = new ArrayList<>(Arrays.asList(900.0,100.0,2000.0));
+		Order order = getOrderWithManyCertainProductPrices(prices);
+		BigDecimal expectedPrice = BigDecimal.ZERO;
+		for (Double price: prices) {
+			expectedPrice = expectedPrice.add(BigDecimal.valueOf(price));
+		}
+
+		//when
+		BigDecimal actualPrice = order.getPrice();
+
+		//then
+		assertEquals(actualPrice,expectedPrice);
 	}
 
 	@Test
