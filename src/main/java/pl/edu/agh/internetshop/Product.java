@@ -9,11 +9,25 @@ public class Product {
 	
     private final String name;
     private final BigDecimal price;
+    private BigDecimal discountValue = BigDecimal.valueOf(1);
 
     public Product(String name, BigDecimal price) {
         this.name = name;
         this.price = price;
         this.price.setScale(PRICE_PRECISION, ROUND_STRATEGY);
+    }
+
+    public void setDiscountValue(double discountValue) {
+        if(discountValue>1 || discountValue<0) throw new IllegalArgumentException("Value of discount out of range (0,1)");
+        this.discountValue = BigDecimal.valueOf(1-discountValue);
+    }
+
+    public BigDecimal getDiscountValue() {
+        return this.discountValue;
+    }
+
+    public BigDecimal getPriceWithDiscount() {
+        return getPrice().multiply(discountValue).setScale(Product.PRICE_PRECISION, Product.ROUND_STRATEGY);
     }
 
     public String getName() {

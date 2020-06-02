@@ -17,6 +17,9 @@ import static pl.edu.agh.internetshop.util.CustomAssertions.assertBigDecimalComp
 
 public class OrderTest {
 
+    private static final String NAME = "Mr. Sparkle";
+    private static final BigDecimal PRICE = BigDecimal.valueOf(1);
+
 	private Order getOrderWithMockedProduct() {
 		Product product = mock(Product.class);
 		return new Order(Collections.singletonList(product));
@@ -125,8 +128,7 @@ public class OrderTest {
 		List<Product> products = new ArrayList<>();
 		for (Double price: prices) {
 			BigDecimal decimalPrice = BigDecimal.valueOf(price);
-			Product product  = mock(Product.class);
-			given(product.getPrice()).willReturn(decimalPrice);
+			Product product  = new Product(NAME,decimalPrice);
 			products.add(product);
 		}
 		return new Order(products);
@@ -148,6 +150,109 @@ public class OrderTest {
 		//then
 		assertEquals(actualPrice,expectedPrice);
 	}
+
+    private Order getOrderWithProductsDiscounts(List<Double> prices,List<Double> discounts) {
+        Order order = getOrderWithManyCertainProductPrices(prices);
+        for (int i=0;i<order.getProducts().size();i++){
+            order.getProducts().get(i).setDiscountValue(discounts.get(i));
+        }
+        return order;
+    }
+
+	@Test
+    public void testOrderGeneralDiscount() {
+	    //given
+        double discount = 0.2;
+        Order order = getOrderWithMockedProduct();
+        order.setDiscount(discount);
+
+        //when
+        //then
+        assertEquals(order.getDiscountValue(),BigDecimal.valueOf(1-discount));
+    }
+
+	@Test
+    public void testOrderWithTooBigDiscount() {
+	    //given
+        double discount = 1.2;
+
+        //when
+        Order order = getOrderWithMockedProduct();
+
+        //then
+        assertThrows(IllegalArgumentException.class, () -> order.setDiscount(discount));
+    }
+
+    @Test
+    public void testOrderWithTooSmallDiscount() {
+        //given
+        double discount = -0.1;
+
+        //when
+        Order order = getOrderWithMockedProduct();
+
+        //then
+        assertThrows(IllegalArgumentException.class, () -> order.setDiscount(discount));
+    }
+
+	@Test
+	public void testPriceWithOnlyGeneralDiscount() {
+		//given
+        List<Double> prices = new ArrayList<>(Arrays.asList(100.0,200.0,90.0));
+        Order order = getOrderWithManyCertainProductPrices(prices);
+        double discount = 0.2;
+        order.setDiscount(discount);
+        BigDecimal expectedPrice = BigDecimal.ZERO;
+        for (Double price: prices){
+            expectedPrice = expectedPrice.add(BigDecimal.valueOf(price));
+        }
+        expectedPrice = expectedPrice.multiply(BigDecimal.valueOf(1-discount));
+
+        //when
+        BigDecimal actualPrice = order.getPriceWithDiscounts();
+
+        //then
+        assertBigDecimalCompareValue(actualPrice,expectedPrice);
+	}
+
+	@Test
+    public void testPriceWithOnlyProductsDiscount() {
+	    //given
+        List<Double> prices = new ArrayList<>(Arrays.asList(100.0,200.0,90.0));
+        List<Double> discounts = new ArrayList<>(Arrays.asList(0.2,0.1,0.3));
+        Order order = getOrderWithProductsDiscounts(prices,discounts);
+        BigDecimal expectedPrice = BigDecimal.ZERO;
+        for (int i=0;i<prices.size();i++) {
+            expectedPrice = expectedPrice.add(BigDecimal.valueOf(prices.get(i)).multiply(BigDecimal.valueOf(1-discounts.get(i))));
+        }
+
+        //when
+        BigDecimal actualPrice = order.getPriceWithDiscounts();
+
+        //then
+        assertBigDecimalCompareValue(expectedPrice,actualPrice);
+    }
+
+    @Test
+    public void testPriceWithBothKindOfDiscounts() {
+	    //given
+        List<Double> prices = new ArrayList<>(Arrays.asList(100.0,200.0,90.0));
+        List<Double> discounts = new ArrayList<>(Arrays.asList(0.2,0.1,0.3));
+        Order order = getOrderWithProductsDiscounts(prices,discounts);
+        double discount = 0.2;
+        order.setDiscount(discount);
+        BigDecimal expectedPrice = BigDecimal.ZERO;
+        for (int i=0;i<prices.size();i++) {
+            expectedPrice = expectedPrice.add(BigDecimal.valueOf(prices.get(i)).multiply(BigDecimal.valueOf(1-discounts.get(i))));
+        }
+        expectedPrice = expectedPrice.multiply(BigDecimal.valueOf(1-discount));
+
+        //when
+        BigDecimal actualPrice = order.getPriceWithDiscounts();
+
+        //then
+        assertBigDecimalCompareValue(actualPrice,expectedPrice);
+    }
 
 	@Test
 	public void testPriceWithTaxesWithoutRoundUp() {

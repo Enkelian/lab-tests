@@ -7,13 +7,14 @@ import java.util.UUID;
 
 
 public class Order {
-    private static final BigDecimal TAX_VALUE = BigDecimal.valueOf(1.23 );
+    private static final BigDecimal TAX_VALUE = BigDecimal.valueOf(1.23);
 	private final UUID id;
     private final List<Product> products;
     private boolean paid;
     private Shipment shipment;
     private ShipmentMethod shipmentMethod;
     private PaymentMethod paymentMethod;
+    private BigDecimal discountValue = BigDecimal.valueOf(1);
 
     public Order(List<Product> products) {
         if(products.isEmpty()) throw new IllegalArgumentException("List of products cannot be empty");
@@ -21,6 +22,14 @@ public class Order {
         this.products = products;
         id = UUID.randomUUID();
         paid = false;
+    }
+
+    public void setDiscount(double discount) {
+        if(discount>1 || discount<0) throw new IllegalArgumentException("Value of discount out of range (0,1)");
+        this.discountValue = BigDecimal.valueOf(1-discount);
+    }
+
+    public BigDecimal getDiscountValue() { return discountValue;
     }
 
     public UUID getId() {
@@ -55,6 +64,14 @@ public class Order {
 
     public BigDecimal getPriceWithTaxes() {
         return getPrice().multiply(TAX_VALUE).setScale(Product.PRICE_PRECISION, Product.ROUND_STRATEGY);
+    }
+
+    public BigDecimal getPriceWithDiscounts() {
+        BigDecimal price = BigDecimal.ZERO;
+        for (Product prod: products){
+            price = price.add(prod.getPriceWithDiscount());
+        }
+        return price.multiply(this.discountValue).setScale(Product.PRICE_PRECISION, Product.ROUND_STRATEGY);
     }
 
     public List<Product> getProducts() {
