@@ -19,6 +19,7 @@ public class OrdersHistoryTest {
     private static final BigDecimal searchedPrice = BigDecimal.valueOf(60);
     private static final String searchedProductName = "product1 name";
     private static final String searchedCustomerName = "customer1 name";
+    private static final OrdersHistory ordersHistory = OrdersHistory.getInstance();
 
 
     public Order mockOrder(BigDecimal orderPrice, String productName, String customerName){
@@ -45,7 +46,6 @@ public class OrdersHistoryTest {
     public void testSearchOnEmptyOrdersHistory(){
 
         //given
-        OrdersHistory ordersHistory = OrdersHistory.getInstance();
         ordersHistory.emptyOrdersList();
 
         CompositeSearchStrategy compositeSearchStrategy = new CompositeSearchStrategy();
@@ -62,7 +62,6 @@ public class OrdersHistoryTest {
     public void testAddOrder(){
 
         //given
-        OrdersHistory ordersHistory = OrdersHistory.getInstance();
         Order order1 = mock(Order.class);
 
         //when
@@ -77,9 +76,6 @@ public class OrdersHistoryTest {
     public void testGetFilteredOrders(){
 
         //given
-
-        OrdersHistory ordersHistory = OrdersHistory.getInstance();
-
         CompositeSearchStrategy compositeSearchStrategy = new CompositeSearchStrategy();
         compositeSearchStrategy.addStrategy(new PriceSearchStrategy(searchedPrice));
         compositeSearchStrategy.addStrategy(new ProductNameSearchStrategy(searchedProductName));
@@ -108,12 +104,6 @@ public class OrdersHistoryTest {
     public void testSearchWithEmptySearchStrategy(){
 
         //given
-
-        OrdersHistory ordersHistory = OrdersHistory.getInstance();
-        Order order1 = mockOrder(searchedPrice, searchedProductName, searchedCustomerName);
-
-        ordersHistory.addOrder(order1);
-
         CompositeSearchStrategy compositeSearchStrategy = new CompositeSearchStrategy();
 
         //when
